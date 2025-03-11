@@ -20,6 +20,8 @@ RED = (200, 50, 70)
 class Style:
     walls = (10, 10, 10)
     cells = (230, 230, 230)
+    coins = (240, 200, 10)
+    flag = (10, 230, 10)
 
 # Размеры клетки
 CELL_SIZE = 50
@@ -29,6 +31,8 @@ cells_width = screen_width // CELL_SIZE
 cells_height = screen_height // CELL_SIZE
 
 field = [[False for _x in range(cells_width)] for _y in range(cells_height)]
+coins = [[False for _x in range(cells_width)] for _y in range(cells_height)]
+flags = [[False for _x in range(cells_width)] for _y in range(cells_height)]
 
 for x in range(cells_width):
     field[0][x] = field[cells_height - 1][x] = True
@@ -50,6 +54,26 @@ def draw_field(screen):
                         CELL_SIZE - 2,
                         CELL_SIZE - 2,
                     ),
+                )
+            if coins[y][x]:
+                pygame.draw.circle(
+                    screen,
+                    Style.coins,
+                    (
+                        x * CELL_SIZE + 7,
+                        y * CELL_SIZE + 7,
+                    ),
+                    5
+                )
+            if flags[y][x]:
+                pygame.draw.circle(
+                    screen,
+                    Style.flag,
+                    (
+                        x * CELL_SIZE + 7,
+                        y * CELL_SIZE + 17,
+                    ),
+                    5
                 )
 
 
@@ -135,6 +159,18 @@ class Robot(pygame.sprite.Sprite):
             self.x = x
             self.y = y
 
+    def coin(self):
+        with self.lock:
+            return coins[self.y][self.x]
+
+    def flag(self):
+        with self.lock:
+            return flags[self.y][self.x]
+
+    def set_flag(self):
+        with self.lock:
+            flags[self.y][self.x] = True
+
 
 robot = Robot()
 
@@ -153,6 +189,15 @@ def wall():
 def wall_right():
     return robot.wall_right()
 
+def coin():
+    return robot.coin()
+
+def flag():
+    return robot.flag()
+
+def set_flag():
+    return robot.set_flag()
+
 
 def main_loop():
     screen = pygame.display.set_mode((screen_width, screen_height))
@@ -160,6 +205,7 @@ def main_loop():
     clock = pygame.time.Clock()
 
     # Основной игровой цикл
+    cur_type = "w"
     started = False
     while True:
         for event in pygame.event.get():
@@ -168,6 +214,10 @@ def main_loop():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     os._exit(1)
+                elif event.key == pygame.K_w:
+                    cur_type = "w"
+                elif event.key == pygame.K_c:
+                    cur_type = "c"
             elif event.type == pygame.MOUSEWHEEL:
                 robot.ms = int(max(10, min(1000, robot.ms + event.y * 0.1 * robot.ms)))
             elif event.type == pygame.MOUSEBUTTONDOWN and not started:
@@ -179,7 +229,10 @@ def main_loop():
 
                 if cell_x < cells_width and cell_y < cells_height:
                     if event.button == 1:
-                        field[cell_y][cell_x] = not field[cell_y][cell_x]
+                        if cur_type == "w":
+                            field[cell_y][cell_x] = not field[cell_y][cell_x]
+                        elif cur_type == "c":
+                            coins[cell_y][cell_x] = not coins[cell_y][cell_x]
                     elif event.button == 3:
                         robot.move(cell_x, cell_y)
                         started = True
