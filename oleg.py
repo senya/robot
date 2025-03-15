@@ -1,18 +1,10 @@
-from vsmntrobot import go, left, right, wall
+from vsmntrobot import coin, flag, go, left, right, set_flag, wall, wall_right
+
 
 while True:
-    while not wall():
-        go()
-
-    left()
-
-    while not wall():
-        go()
-
-    left()
-
-    while not wall():
+    if wall():
         left()
-        go()
-        right()
+    else:
+        if not wall_right():
+            right()
         go()
